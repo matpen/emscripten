@@ -7910,7 +7910,6 @@ int main() {
           assert proc.returncode != 0, proc.stderr
           self.assertNotIn('hello, world!', proc.stdout)
 
-  @no_wasm_backend('contains asm2wasm specifics')
   def test_binaryen_metadce(self):
     def test(filename, expectations):
       # in -Os, -Oz, we remove imports wasm doesn't need
@@ -7946,23 +7945,6 @@ int main() {
         if expected_wasm_funcs is not None:
           self.assertEqual(funcs, expected_wasm_funcs)
 
-    print('test on hello world')
-    test(path_from_root('tests', 'hello_world.cpp'), [
-      ([],      23, ['abort', 'tempDoublePtr'], ['waka'],                  46505,  24,   16, 59), # noqa
-      (['-O1'], 18, ['abort', 'tempDoublePtr'], ['waka'],                  12630,  16,   14, 31), # noqa
-      (['-O2'], 18, ['abort', 'tempDoublePtr'], ['waka'],                  12616,  16,   14, 31), # noqa
-      (['-O3'],  7, [],                         [],  2690,  10,    2, 21), # noqa; in -O3, -Os and -Oz we metadce
-      (['-Os'],  7, [],                         [],  2690,  10,    2, 21), # noqa
-      (['-Oz'],  7, [],                         [],  2690,  10,    2, 21), # noqa
-      # finally, check what happens when we export nothing. wasm should be almost empty
-      (['-Os', '-s', 'EXPORTED_FUNCTIONS=[]'],
-                 0, [],                         [],     8,   0,    0, 0), # noqa; totally empty!
-      # but we don't metadce with linkable code! other modules may want it
-      (['-O3', '-s', 'MAIN_MODULE=1'],
-              1505, [],                         [], 226057,  30,   75, None), # noqa; don't compare the # of functions in a main module, which changes a lot
-    ]) # noqa
-
-    print('test on a minimal pure computational thing')
     open('minimal.c', 'w').write('''
       #include <emscripten.h>
 
@@ -7971,22 +7953,73 @@ int main() {
         return x + y;
       }
       ''')
-    test('minimal.c', [
-      ([],      23, ['abort', 'tempDoublePtr'], ['waka'],                  22712, 24, 15, 28), # noqa
-      (['-O1'], 13, ['abort', 'tempDoublePtr'], ['waka'],                  10450,  9, 12, 12), # noqa
-      (['-O2'], 13, ['abort', 'tempDoublePtr'], ['waka'],                  10440,  9, 12, 12), # noqa
-      # in -O3, -Os and -Oz we metadce, and they shrink it down to the minimal output we want
-      (['-O3'],  0, [],                         [],                           55,  0,  1, 1), # noqa
-      (['-Os'],  0, [],                         [],                           55,  0,  1, 1), # noqa
-      (['-Oz'],  0, [],                         [],                           55,  0,  1, 1), # noqa
-    ])
 
-    print('test on libc++: see effects of emulated function pointers')
-    test(path_from_root('tests', 'hello_libcxx.cpp'), [
-      (['-O2'], 36, ['abort', 'tempDoublePtr'], ['waka'],                 196709,  30,   41, 659), # noqa
-      (['-O2', '-s', 'EMULATED_FUNCTION_POINTERS=1'],
-                36, ['abort', 'tempDoublePtr'], ['waka'],                 196709,  30,   22, 620), # noqa
-    ]) # noqa
+    if not self.is_wasm_backend():
+      print('test on hello world')
+      test(path_from_root('tests', 'hello_world.cpp'), [
+        ([],      23, ['assert'], ['waka'],                  46505,  24,   16, 59), # noqa
+        (['-O1'], 18, ['assert'], ['waka'],                  12630,  16,   14, 31), # noqa
+        (['-O2'], 18, ['assert'], ['waka'],                  12616,  16,   14, 31), # noqa
+        (['-O3'],  7, [],         [],  2690,  10,    2, 21), # noqa; in -O3, -Os and -Oz we metadce
+        (['-Os'],  7, [],         [],  2690,  10,    2, 21), # noqa
+        (['-Oz'],  7, [],         [],  2690,  10,    2, 21), # noqa
+        # finally, check what happens when we export nothing. wasm should be almost empty
+        (['-Os', '-s', 'EXPORTED_FUNCTIONS=[]'],
+                   0, [],         [],     8,   0,    0, 0), # noqa; totally empty!
+        # we don't metadce with linkable code! other modules may want stuff
+        (['-O3', '-s', 'MAIN_MODULE=1'],
+                1505, [],                         [], 226057,  30,   75, None), # noqa; don't compare the # of functions in a main module, which changes a lot
+      ]) # noqa
+
+      print('test on a minimal pure computational thing')
+      test('minimal.c', [
+        ([],      23, ['assert'], ['waka'],                  22712, 24, 15, 28), # noqa
+        (['-O1'], 13, ['assert'], ['waka'],                  10450,  9, 12, 12), # noqa
+        (['-O2'], 13, ['assert'], ['waka'],                  10440,  9, 12, 12), # noqa
+        # in -O3, -Os and -Oz we metadce, and they shrink it down to the minimal output we want
+        (['-O3'],  0, [],         [],                           55,  0,  1, 1), # noqa
+        (['-Os'],  0, [],         [],                           55,  0,  1, 1), # noqa
+        (['-Oz'],  0, [],         [],                           55,  0,  1, 1), # noqa
+      ])
+
+      print('test on libc++: see effects of emulated function pointers')
+      test(path_from_root('tests', 'hello_libcxx.cpp'), [
+        (['-O2'], 36, ['assert'], ['waka'],                 196709,  30,   41, 659), # noqa
+        (['-O2', '-s', 'EMULATED_FUNCTION_POINTERS=1'],
+                  36, ['assert'], ['waka'],                 196709,  30,   22, 620), # noqa
+      ]) # noqa
+    else:
+      print('test on hello world')
+      test(path_from_root('tests', 'hello_world.cpp'), [
+        ([],      19, ['assert'], ['waka'],                  30405,  8,  15, 69), # noqa
+        (['-O1'], 17, ['assert'], ['waka'],                  11684,  6,  14, 28), # noqa
+        (['-O2'], 17, ['assert'], ['waka'],                  11529,  6,  14, 24), # noqa
+        (['-O3'],  9, [],         [],                         3419,  5,   4, 15), # noqa; in -O3, -Os and -Oz we metadce
+        (['-Os'],  9, [],         [],                         3374,  5,   4, 16), # noqa
+        (['-Oz'],  9, [],         [],                         3333,  5,   3, 15), # noqa
+        # finally, check what happens when we export nothing. wasm should be almost empty
+        (['-Os', '-s', 'EXPORTED_FUNCTIONS=[]'],
+                   5, [],         [],                          102,  0,   2,  2), # noqa; almost totally empty!
+      ]) # noqa
+
+      # wasm-backend
+      print('test on a minimal pure computational thing')
+      test('minimal.c', [
+        ([],      19, ['assert'], ['waka'],                  11595,  8, 15, 24), # noqa
+        (['-O1'], 12, ['assert'], ['waka'],                   8219,  2, 12, 10), # noqa
+        (['-O2'], 12, ['assert'], ['waka'],                   8219,  2, 12, 10), # noqa
+        # in -O3, -Os and -Oz we metadce, and they shrink it down to the minimal output we want
+        (['-O3'],  5, [],         [],                          102,  0,  2,  2), # noqa
+        (['-Os'],  5, [],         [],                          102,  0,  2,  2), # noqa
+        (['-Oz'],  5, [],         [],                           71,  0,  1,  1), # noqa
+      ])
+
+      print('test on libc++: see effects of emulated function pointers')
+      test(path_from_root('tests', 'hello_libcxx.cpp'), [
+        (['-O2'], 42, ['assert'], ['waka'],                 348249,  26,  220, 723), # noqa
+        (['-O2', '-s', 'EMULATED_FUNCTION_POINTERS=1'],
+                  42, ['assert'], ['waka'],                 348249,  26,  220, 723), # noqa
+      ]) # noqa
 
   # ensures runtime exports work, even with metadce
   def test_extra_runtime_exports(self):
