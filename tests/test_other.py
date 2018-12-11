@@ -7989,29 +7989,29 @@ int main() {
                   36, ['assert'], ['waka'],                 196709,  30,   22, 620), # noqa
       ]) # noqa
     else:
+      # wasm-backend
       print('test on hello world')
       test(path_from_root('tests', 'hello_world.cpp'), [
         ([],      19, ['assert'], ['waka'],                  30405,  8,  15, 69), # noqa
         (['-O1'], 17, ['assert'], ['waka'],                  11684,  6,  14, 28), # noqa
         (['-O2'], 17, ['assert'], ['waka'],                  11529,  6,  14, 24), # noqa
-        (['-O3'],  9, [],         [],                         3419,  5,   4, 15), # noqa; in -O3, -Os and -Oz we metadce
-        (['-Os'],  9, [],         [],                         3374,  5,   4, 16), # noqa
-        (['-Oz'],  9, [],         [],                         3333,  5,   3, 15), # noqa
+        (['-O3'],  4, [],         [],                         3419,  5,   4, 15), # noqa; in -O3, -Os and -Oz we metadce
+        (['-Os'],  4, [],         [],                         3374,  5,   4, 16), # noqa
+        (['-Oz'],  4, [],         [],                         3333,  5,   3, 15), # noqa
         # finally, check what happens when we export nothing. wasm should be almost empty
         (['-Os', '-s', 'EXPORTED_FUNCTIONS=[]'],
-                   5, [],         [],                          102,  0,   2,  2), # noqa; almost totally empty!
+                   0, [],         [],                          102,  0,   2,  2), # noqa; almost totally empty!
       ]) # noqa
 
-      # wasm-backend
       print('test on a minimal pure computational thing')
       test('minimal.c', [
         ([],      19, ['assert'], ['waka'],                  11595,  8, 15, 24), # noqa
         (['-O1'], 12, ['assert'], ['waka'],                   8219,  2, 12, 10), # noqa
         (['-O2'], 12, ['assert'], ['waka'],                   8219,  2, 12, 10), # noqa
         # in -O3, -Os and -Oz we metadce, and they shrink it down to the minimal output we want
-        (['-O3'],  5, [],         [],                          102,  0,  2,  2), # noqa
-        (['-Os'],  5, [],         [],                          102,  0,  2,  2), # noqa
-        (['-Oz'],  5, [],         [],                           71,  0,  1,  1), # noqa
+        (['-O3'],  0, [],         [],                          102,  0,  2,  2), # noqa
+        (['-Os'],  0, [],         [],                          102,  0,  2,  2), # noqa
+        (['-Oz'],  0, [],         [],                           71,  0,  1,  1), # noqa
       ])
 
       print('test on libc++: see effects of emulated function pointers')
