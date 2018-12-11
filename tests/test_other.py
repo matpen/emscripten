@@ -8000,7 +8000,9 @@ int main() {
         (['-Oz'],  4, [],         [],                         3333,  5,   3, 15), # noqa
         # finally, check what happens when we export nothing. wasm should be almost empty
         (['-Os', '-s', 'EXPORTED_FUNCTIONS=[]'],
-                   0, [],         [],                          102,  0,   2,  2), # noqa; almost totally empty!
+                   0, [],         [],                          102,  0,   2,  2), # noqa; almost totally empty! just:
+                                                                                  #  * post-instantiate
+                                                                                  #  * stackAlloc
       ]) # noqa
 
       print('test on a minimal pure computational thing')
